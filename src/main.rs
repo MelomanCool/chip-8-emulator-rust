@@ -1,6 +1,9 @@
 use std::fs;
 use std::convert::TryInto;
 
+use rand::rngs::SmallRng;
+use rand::{ Rng, SeedableRng };
+
 struct Chip8 {
     memory: Vec<u8>,
     program_counter: u16,
@@ -16,7 +19,7 @@ struct Chip8 {
     keyboard: Vec<bool>,
     display_memory: Vec<bool>,
 
-    rng: bool,
+    rng: SmallRng,
 }
 
 fn init() -> Chip8 {
@@ -30,7 +33,7 @@ fn init() -> Chip8 {
         sound_timer : 0,
         keyboard : vec![false; 16],
         display_memory : vec![false; 64 * 32],
-        rng : false,
+        rng : SmallRng::from_entropy(),
     }
 }
 
@@ -212,8 +215,10 @@ fn step(chip8: Chip8) -> Chip8 {
                     Chip8 { v : replace(&chip8.v, x, value), .. chip8 },
                 LoadValToI { value } =>
                     Chip8 { reg_i : value, .. chip8 },
-                LoadRandomAndValToReg { x, value } =>
-                    Chip8 { v : replace(&chip8.v, x, (chip8.rng as u8) & value), rng : !chip8.rng, .. chip8 },
+                LoadRandomAndValToReg { x, value } => {
+                    let mut g = chip8.rng.clone();
+                    Chip8 { v : replace(&chip8.v, x, g.gen::<u8>() & value), rng : g, .. chip8 }
+                },
                 AddValToReg { x, value } =>
                     Chip8 { v : replace(&chip8.v, x, chip8.v[x as usize] + value), .. chip8 },
                 SkipIfRegValEqual { x, value } =>
