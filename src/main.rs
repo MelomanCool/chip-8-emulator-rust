@@ -145,7 +145,9 @@ fn parse_opcode(opcode: u16) -> MetaOpcode {
 fn load_rom(chip8: Chip8, filename: &str) -> Chip8 {
     let rom = fs::read(filename).expect("Couldn't load the rom.");
     let mut memory = chip8.memory.to_vec();
-    memory.splice(512.., rom);
+    // FIXME: Still unsure if this is the correct
+    // way to replace a part of vec.
+    memory.splice(512..(512 + rom.len()), rom);
     return Chip8 { memory , .. chip8 };
 }
 
